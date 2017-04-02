@@ -21,9 +21,13 @@ from bench import patches
 @click.option('--force', is_flag=True)
 @click.option('--reset', is_flag=True,
               help="Hard resets git branch's to their new states overriding any changes and overriding rebase on pull")
-def update(pull=False, patch=False, build=False, bench=False, auto=False, restart_supervisor=False, requirements=False,
-           no_backup=False, upgrade=False, force=False, reset=False):
+@click.option('--force_frappe', is_flag=True)
+def update(pull=False, patch=False, build=False, bench=False, auto=False,
+           restart_supervisor=False, requirements=False,
+           no_backup=False, upgrade=False, force=False, reset=False,
+           force_frappe = False):
     "Update bench"
+    print "force_frape {0}".format(force_frappe)
 
     if not (pull or patch or build or bench or requirements):
         pull, patch, build, bench, requirements = True, True, True, True, True
@@ -34,18 +38,18 @@ def update(pull=False, patch=False, build=False, bench=False, auto=False, restar
     patches.run(bench_path='.')
     conf = get_config(".")
 
-    if bench and conf.get('update_bench_on_update'):
-        update_bench()
-        restart_update({
-            'pull': pull,
-            'patch': patch,
-            'build': build,
-            'requirements': requirements,
-            'no-backup': no_backup,
-            'restart-supervisor': restart_supervisor,
-            'upgrade': upgrade,
-            'reset': reset
-        })
+    # if bench and conf.get('update_bench_on_update'):
+    #     update_bench()
+    #     restart_update({
+    #         'pull': pull,
+    #         'patch': patch,
+    #         'build': build,
+    #         'requirements': requirements,
+    #         'no-backup': no_backup,
+    #         'restart-supervisor': restart_supervisor,
+    #         'upgrade': upgrade,
+    #         'reset': reset
+    #     })
 
     if conf.get('release_bench'):
         print 'Release bench, cannot update'
@@ -65,11 +69,12 @@ def update(pull=False, patch=False, build=False, bench=False, auto=False, restar
         sys.exit(1)
 
     _update(pull, patch, build, bench, auto, restart_supervisor, requirements, no_backup, upgrade, force=force,
-            reset=reset)
+            reset=reset,force_frappe=force_frappe)
 
 
 def _update(pull=False, patch=False, build=False, update_bench=False, auto=False, restart_supervisor=False,
-            requirements=False, no_backup=False, upgrade=False, bench_path='.', force=False, reset=False):
+            requirements=False, no_backup=False, upgrade=False, bench_path='.', force=False, reset=False,
+            force_frappe=False):
     conf = get_config(bench_path=bench_path)
     version_upgrade = is_version_upgrade(bench_path=bench_path)
 
@@ -82,10 +87,10 @@ def _update(pull=False, patch=False, build=False, update_bench=False, auto=False
     before_update(bench_path=bench_path, requirements=requirements)
 
     if pull:
-        pull_all_apps(bench_path=bench_path, reset=reset)
+        pull_all_apps(bench_path=bench_path, reset=reset,force_frappe=force_frappe)
 
-    if requirements:
-        update_requirements(bench_path=bench_path)
+    # if requirements:
+    #     update_requirements(bench_path=bench_path)
 
     if upgrade and (version_upgrade[0] or (not version_upgrade[0] and force)):
         pre_upgrade(version_upgrade[1], version_upgrade[2], bench_path=bench_path)
@@ -127,7 +132,7 @@ def restart_update(kwargs):
 @click.argument('branch')
 @click.argument('apps', nargs=-1)
 @click.option('--upgrade', is_flag=True)
-def switch_to_branch(branch, apps, upgrade=False):
+def switch_to_branch(branch, apps, upgrade=False,force_frappe=False):
     "Switch all apps to specified branch, or specify apps separated by space"
     from bench.app import switch_to_branch
     switch_to_branch(branch=branch, apps=list(apps), upgrade=upgrade)
@@ -137,10 +142,11 @@ def switch_to_branch(branch, apps, upgrade=False):
 
 @click.command('switch-to-master')
 @click.option('--upgrade', is_flag=True)
-def switch_to_master(upgrade=False):
+@click.option('--force_frappe', is_flag=True)
+def switch_to_master(upgrade=False,force_frappe=False):
     "Switch frappe and erpnext to master branch"
     from bench.app import switch_to_master
-    switch_to_master(upgrade=upgrade, apps=['frappe', 'erpnext'])
+    switch_to_master(upgrade=upgrade, apps=['frappe', 'erpnext'],force_frappe=force_frappe)
     print
     print 'Switched to master'
     print 'Please run `bench update --patch` to be safe from any differences in database schema'
@@ -176,4 +182,14 @@ def switch_to_v5(upgrade=False):
     switch_to_v5(upgrade=upgrade)
     print
     print 'Switched to v5'
+    print 'Please run `bench update --patch` to be safe from any differences in database schema'
+
+@click.command('switch-to-v7')
+@click.option('--upgrade', is_flag=True)
+def switch_to_v7(upgrade=False):
+    "Switch frappe and erpnext to v7 branch"
+    from bench.app import switch_to_v7
+    switch_to_v7(upgrade=upgrade)
+    print
+    print 'Switched to v7'
     print 'Please run `bench update --patch` to be safe from any differences in database schema'
