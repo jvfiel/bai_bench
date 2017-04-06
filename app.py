@@ -140,17 +140,32 @@ def remove_app(app, bench_path='.'):
         restart_supervisor_processes(bench_path=bench_path)
 
 
-def pull_all_apps(bench_path='.', reset=False, force_frappe=False):
+def pull_all_apps(bench_path='.', reset=False, force_frappe=False,force_erpnext=False,force_frappe_erpnext=False):
     rebase = '--rebase' if get_config(bench_path).get('rebase_on_pull') else ''
 
     for app in get_apps(bench_path=bench_path):
-        if "frappe" in app:
+        # if "frappe" in app:
+        #     if force_frappe == False:
+        #         print "WILL NOT UPDATE {0}".format(app)
+        #         continue
+        # if "erpnext" in app:
+        #     print "WILL NOT UPDATE {0}".format(app)
+        #     continue
+
+        if force_frappe_erpnext == False:
             if force_frappe == False:
-                print "WILL NOT UPDATE {0}".format(app)
-                continue
-        if "erpnext" in app:
-            print "WILL NOT UPDATE {0}".format(app)
-            continue
+                # print "WILL NOT SWTICH frappe"
+                # apps.remove('frappe')
+                if "frappe" in app:
+                    continue
+            if force_erpnext == False:
+                # apps.remove('erpnext')
+                if "erpnext" in app:
+                    continue
+        else:  # True
+            # apps.remove('frappe')
+            # apps.remove('erpnext')
+            pass
 
         app_dir = get_repo_dir(app, bench_path=bench_path)
         if os.path.exists(os.path.join(app_dir, '.git')):
@@ -262,7 +277,8 @@ def get_repo_dir(app, bench_path='.'):
     return os.path.join(bench_path, 'apps', app)
 
 
-def switch_branch(branch, apps=None, bench_path='.', upgrade=False, check_upgrade=True,force_frappe=False):
+def switch_branch(branch, apps=None, bench_path='.', upgrade=False, check_upgrade=True,force_frappe=False,
+                  force_erpnext=False,force_frappe_erpnext=False):
     from .utils import update_requirements, backup_all_sites, patch_sites, build_assets, pre_upgrade, post_upgrade
     import utils
     apps_dir = os.path.join(bench_path, 'apps')
@@ -275,11 +291,18 @@ def switch_branch(branch, apps=None, bench_path='.', upgrade=False, check_upgrad
         if branch == "v4.x.x":
             apps.append('shopping_cart')
 
-    if force_frappe == False:
-        #print "WILL NOT SWTICH frappe"
-        apps.remove('frappe')
-    #REMOVE ERPNEXT
-    apps.remove('erpnext')
+
+    if force_frappe_erpnext == False:
+        if force_frappe == False:
+            # print "WILL NOT SWTICH frappe"
+            apps.remove('frappe')
+        if force_erpnext == False:
+            apps.remove('erpnext')
+    else: #True
+        # apps.remove('frappe')
+        # apps.remove('erpnext')
+        pass
+
 
     for app in apps:
         app_dir = os.path.join(apps_dir, app)
@@ -326,8 +349,9 @@ def switch_to_branch(branch=None, apps=None, bench_path='.', upgrade=False):
     switch_branch(branch, apps=apps, bench_path=bench_path, upgrade=upgrade)
 
 
-def switch_to_master(apps=None, bench_path='.', upgrade=False,force_frappe=False):
-    switch_branch('master', apps=apps, bench_path=bench_path, upgrade=upgrade,force_frappe=force_frappe)
+def switch_to_master(apps=None, bench_path='.', upgrade=False,force_frappe=False,force_erpnext=False,force_frappe_erpnext=False):
+    switch_branch('master', apps=apps, bench_path=bench_path, upgrade=upgrade,force_frappe=force_frappe,
+                  force_erpnext=force_erpnext,force_frappe_erpnext=force_frappe_erpnext)
 
 
 def switch_to_develop(apps=None, bench_path='.', upgrade=False):
